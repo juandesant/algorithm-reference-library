@@ -8,7 +8,8 @@ import unittest
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 from arl.util.testing_support import create_named_configuration
-from arl.visibility.iterators import vis_timeslice_iter, vis_wstack_iter, vis_slice_iter
+from arl.visibility.iterators import vis_timeslice_iter, vis_wstack_iter, vis_slice_iter, \
+    vis_null_iter
 from arl.visibility.base import create_visibility, create_visibility_from_rows
 
 import logging
@@ -35,6 +36,11 @@ class TestVisibilityIterators(unittest.TestCase):
                                      weight=1.0)
         self.vis.data['vis'][:, 0] = self.vis.time
 
+    def test_vis_null_iterator(self):
+        self.actualSetUp()
+        for chunk, rows in enumerate(vis_null_iter(self.vis)):
+            assert chunk<1, "Null iterator returns more than one value"
+
     def test_vis_slice_iterator(self):
         self.actualSetUp()
         total_rows = 0
@@ -57,11 +63,11 @@ class TestVisibilityIterators(unittest.TestCase):
 
     def test_vis_timeslice_iterator(self):
         self.actualSetUp()
-        nchunks = len(list(vis_timeslice_iter(self.vis)))
+        nchunks = len(list(vis_timeslice_iter(self.vis, timeslice='auto')))
         log.debug('Found %d chunks' % (nchunks))
         assert nchunks > 1
         total_rows = 0
-        for chunk, rows in enumerate(vis_timeslice_iter(self.vis)):
+        for chunk, rows in enumerate(vis_timeslice_iter(self.vis, timeslice='auto')):
             visslice = create_visibility_from_rows(self.vis, rows)
             total_rows += visslice.nvis
             assert visslice.vis[0].real == visslice.time[0]

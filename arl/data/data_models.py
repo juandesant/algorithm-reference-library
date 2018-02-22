@@ -118,9 +118,8 @@ class GainTable:
     The weight is usually that output from gain solvers.
     """
     
-    def __init__(self, data=None, gain: numpy.array = None, time: numpy.array = None,
-                 weight: numpy.array = None, residual: numpy.array = None,
-                 frequency: numpy.array = None,
+    def __init__(self, data=None, gain: numpy.array = None, time: numpy.array = None, interval=None,
+                 weight: numpy.array = None, residual: numpy.array = None, frequency: numpy.array = None,
                  receptor_frame: ReceptorFrame = ReceptorFrame("linear")):
         """ Create a gaintable from arrays
 
@@ -128,9 +127,11 @@ class GainTable:
 
             Vobs = g_i g_j^* Vmodel
 
+        :param interval:
         :param data:
         :param gain: [:, nchan, nrec, nrec]
-        :param time:
+        :param time: Centroid of solution
+        :param interval: Interval of validity
         :param weight:
         :param residual:
         :param frequency:
@@ -146,12 +147,16 @@ class GainTable:
             desc = [('gain', '>c16', (nants, nchan, nrec, nrec)),
                     ('weight', '>f8', (nants, nchan, nrec, nrec)),
                     ('residual', '>f8', (nchan, nrec, nrec)),
-                    ('time', '>f8')]
-            self.data = numpy.zeros(shape=[nrows], dtype=desc)
-            self.data['gain'] = gain
-            self.data['weight'] = weight
-            self.data['time'] = time
-            self.data['residual'] = residual
+                    ('time', '>f8'),
+                    ('interval', '>f8')]
+            data = numpy.zeros(shape=[nrows], dtype=desc)
+            data['gain'] = gain
+            data['weight'] = weight
+            data['time'] = time
+            data['interval'] = interval
+            data['residual'] = residual
+            
+        self.data = data
         self.frequency = frequency
         self.receptor_frame = receptor_frame
     
@@ -161,11 +166,15 @@ class GainTable:
         size = 0
         size += self.data.size * sys.getsizeof(self.data)
         return size / 1024.0 / 1024.0 / 1024.0
-    
+
     @property
     def time(self):
         return self.data['time']
-    
+
+    @property
+    def interval(self):
+        return self.data['interval']
+
     @property
     def gain(self):
         return self.data['gain']
@@ -177,11 +186,15 @@ class GainTable:
     @property
     def residual(self):
         return self.data['residual']
-    
+
+    @property
+    def ntimes(self):
+        return self.data['gain'].shape[0]
+
     @property
     def nants(self):
         return self.data['gain'].shape[1]
-    
+
     @property
     def nchan(self):
         return self.data['gain'].shape[2]
@@ -243,7 +256,7 @@ class Image:
     @property
     def frequency(self):
         w = self.wcs.sub(['spectral'])
-        return w.wcs_pix2world(range(self.nchan), 1)[0]
+        return w.wcs_pix2world(range(self.nchan), 0)[0]
     
     @property
     def shape(self):
@@ -271,7 +284,7 @@ class Skycomponent:
 
         bm = create_low_test_beam(model=model)
         sc = apply_beam_to_skycomponent(sc, bm)
-        vis = predict_skycomponent_blockvisibility(vis, sc)
+        vis = predict_skycomponent_visibility(vis, sc)
     """
     
     def __init__(self,
@@ -296,8 +309,8 @@ class Skycomponent:
         self.params = kwargs
         self.polarisation_frame = polarisation_frame
         
-        assert len(self.frequency.shape) == 1
-        assert len(self.flux.shape) == 2
+        assert len(self.frequency.shape) == 1, frequency
+        assert len(self.flux.shape) == 2, flux
         assert self.frequency.shape[0] == self.flux.shape[0], \
             "Frequency shape %s, flux shape %s" % (self.frequency.shape, self.flux.shape)
         assert polarisation_frame.npol == self.flux.shape[1], \
@@ -317,10 +330,11 @@ class Skycomponent:
         """
         s = "Skycomponent:\n"
         s += "\tFlux: %s\n" % self.flux
+        s += "\tFrequency: %s\n" % self.frequency
         s += "\tDirection: %s\n" % self.direction
         s += "\tShape: %s\n" % self.shape
         s += "\tParams: %s\n" % self.params
-        s += "\tPolarisation frame %s\n" % self.polarisation_frame
+        s += "\tPolarisation frame: %s\n" % str(self.polarisation_frame.type)
         return s
 
 
@@ -328,7 +342,7 @@ class Visibility:
     """ Visibility table class
 
     Visibility with uvw, time, integration_time, frequency, channel_bandwidth, a1, a2, vis, weight
-    Columns in a numpy structured array, The fundemental unit is a complex vector of polarisation.
+    as separate columns in a numpy structured array, The fundemental unit is a complex vector of polarisation.
 
     Visibility is defined to hold an observation with one direction.
     Polarisation frame is the same for the entire data set and can be stokes, circular, linear
@@ -425,6 +439,10 @@ class Visibility:
         return self.data['index']
     
     @property
+    def npol(self):
+        return self.polarisation_frame.npol
+    
+    @property
     def nvis(self):
         return self.data['vis'].shape[0]
     
@@ -484,15 +502,17 @@ class Visibility:
 class BlockVisibility:
     """ Block Visibility table class
 
-    Visibility with uvw, time, integration_time, frequency, channel_bandwidth, pol,
-    a1, a2, vis, weight Columns in a numpy structured array
-    Visibility is defined to hold an observation with one direction.
+    BlockVisibility with uvw, time, integration_time, frequency, channel_bandwidth, pol,
+    a1, a2, vis, weight Columns in a numpy structured array.
+    
+    BlockVisibility is defined to hold an observation with one direction.
 
     The phasecentre is the direct of delay tracking i.e. n=0. If uvw are rotated then this
     should be updated with the new delay tracking centre. This is important for wstack and wproject
     algorithms.
 
-    Polarisation frame is the same for the entire data set and can be stokes, circular, linear
+    Polarisation frame is the same for the entire data set and can be stokesI, circular, linear
+    
     The configuration is also an attribute
     """
     
@@ -612,7 +632,7 @@ class QA:
         """
         self.origin = origin  # Name of function originating QA assessment
         self.data = data  # Dictionary containing standard fields
-        self.context = context  # Context string (TBD)
+        self.context = context  # Context string
     
     def __str__(self):
         """Default printer for QA
@@ -635,9 +655,10 @@ def assert_same_chan_pol(o1, o2):
     assert o1.npol == o2.npol, \
         "%s and %s have different number of polarisations: %d != %d" % \
         (type(o1).__name__, type(o2).__name__, o1.npol, o2.npol)
-    assert o1.nchan == o2.nchan, \
-        "%s and %s have different number of channels: %d != %d" % \
-        (type(o1).__name__, type(o2).__name__, o1.nchan, o2.nchan)
+    if isinstance(o1, BlockVisibility) and isinstance(o2, BlockVisibility):
+        assert o1.nchan == o2.nchan, \
+            "%s and %s have different number of channels: %d != %d" % \
+            (type(o1).__name__, type(o2).__name__, o1.nchan, o2.nchan)
 
 
 def assert_vis_gt_compatible(vis: Union[Visibility, BlockVisibility], gt: GainTable):

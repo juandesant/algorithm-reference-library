@@ -16,3 +16,6 @@ examples/performance/*
 
 __pycache__
 .cache
+/results
+/workspace
+/tests/unittest_results

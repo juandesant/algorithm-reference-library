@@ -116,6 +116,12 @@ Solvers
 .. automodule:: arl.calibration.solvers
    :members:
 
+Sagecal
++++++++
+
+.. automodule:: arl.calibration.sagecal
+   :members:
+
 Fourier transform
 -----------------
 
@@ -141,16 +147,17 @@ Base
 .. automodule:: arl.imaging.base
    :members:
 
-Facets
-++++++
+Imaging context
++++++++++++++++
 
-.. automodule:: arl.imaging.facets
+.. automodule:: arl.imaging.imaging_context
    :members:
 
-Facets and Wstack
-+++++++++++++++++
 
-.. automodule:: arl.imaging.facets_wstack
+Parameters
+++++++++++
+
+.. automodule:: arl.imaging.params
    :members:
 
 Timeslice
@@ -159,34 +166,17 @@ Timeslice
 .. automodule:: arl.imaging.timeslice
    :members:
 
-Wprojection
-+++++++++++
 
-.. automodule:: arl.imaging.wprojection
-   :members:
-
-Wprojection and Wstack
-++++++++++++++++++++++
-
-.. automodule:: arl.imaging.wprojection_wstack
-   :members:
-
-Wstack
+WStack
 ++++++
 
 .. automodule:: arl.imaging.wstack
    :members:
 
-Parameters
-++++++++++
+Weighting
++++++++++
 
-.. automodule:: arl.imaging.params
-   :members:
-
-Iterated
-++++++++
-
-.. automodule:: arl.imaging.iterated
+.. automodule:: arl.imaging.weighting
    :members:
 
 
@@ -250,7 +240,7 @@ Coordinate Support
 Graph support
 +++++++++++++
 
-.. automodule:: arl.util.graph_support
+.. automodule:: arl.util.delayed_support
    :members:
 
 Quality assessment
@@ -277,13 +267,7 @@ Graphs
 Dask Graphs using delayed
 +++++++++++++++++++++++++
 
-.. automodule:: arl.graphs.graphs
-   :members:
-
-Dask Graphs using bags
-++++++++++++++++++++++
-
-.. automodule:: arl.graphs.bags
+.. automodule:: arl.graphs.delayed
    :members:
 
 Generic Dask Graphs using delayed
@@ -298,11 +282,6 @@ Dask init
 .. automodule:: arl.graphs.dask_init
    :members:
 
-Visualisation
-+++++++++++++
-
-.. automodule:: arl.graphs.vis
-   :members:
 
 Pipelines
 ---------
@@ -310,7 +289,7 @@ Pipelines
 Pipeline Graphs using delayed
 +++++++++++++++++++++++++++++
 
-.. automodule:: arl.pipelines.graphs
+.. automodule:: arl.pipelines.delayed
    :members:
 
 Functions
@@ -357,23 +336,15 @@ Unit tests written in standard python style are available.
    :members:
    :undoc-members:
 
+.. automodule:: tests.test_delayed_support
+   :members:
+   :undoc-members:
+
 .. automodule:: tests.test_fft_support
    :members:
    :undoc-members:
 
 .. automodule:: tests.test_generic_graph
-   :members:
-   :undoc-members:
-
-.. automodule:: tests.test_graph_support
-   :members:
-   :undoc-members:
-
-.. automodule:: tests.test_graphs
-   :members:
-   :undoc-members:
-
-.. automodule:: tests.test_bags
    :members:
    :undoc-members:
 
@@ -405,7 +376,11 @@ Unit tests written in standard python style are available.
    :members:
    :undoc-members:
 
-.. automodule:: tests.test_imaging
+.. automodule:: tests.test_imaging_delayed
+   :members:
+   :undoc-members:
+
+.. automodule:: tests.test_imaging_functions
    :members:
    :undoc-members:
 
@@ -417,15 +392,19 @@ Unit tests written in standard python style are available.
    :members:
    :undoc-members:
 
-.. automodule:: tests.test_pipelines
+.. automodule:: tests.test_pipelines_delayed
    :members:
    :undoc-members:
 
-.. automodule:: tests.test_pipelines_graphs
+.. automodule:: tests.test_pipelines_functions
    :members:
    :undoc-members:
 
 .. automodule:: tests.test_polarisation
+   :members:
+   :undoc-members:
+
+.. automodule:: tests.test_primary_beams
    :members:
    :undoc-members:
 
@@ -453,3 +432,6 @@ Unit tests written in standard python style are available.
    :members:
    :undoc-members:
 
+.. automodule:: tests.test_weighting
+   :members:
+   :undoc-members:
